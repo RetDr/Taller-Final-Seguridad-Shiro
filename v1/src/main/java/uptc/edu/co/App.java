@@ -3,7 +3,6 @@ package uptc.edu.co;
 import java.util.Scanner;
 
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.config.IniSecurityManagerFactory;
 import org.apache.shiro.mgt.SecurityManager;
@@ -40,12 +39,16 @@ public class App {
                 System.out.print("Contraseña: ");
                 String password = sc.nextLine();
 
-                Subject currentUser = SecurityUtils.getSubject();
-                UsernamePasswordToken token = new UsernamePasswordToken(username, password);
-
-                try {
-                    currentUser.login(token); // Autenticación vía Shiro
-                    System.out.println("Autenticación exitosa. Bienvenido " + currentUser.getPrincipal());
+                if (userService.validarPassword(username, password)) {
+                    System.out.println("Autenticación exitosa. Bienvenido " + username);
+                    
+                    Subject currentUser = SecurityUtils.getSubject();
+                    UsernamePasswordToken token = new UsernamePasswordToken(username, password);
+                    try {
+                        currentUser.login(token);
+                    } catch (Exception e) {
+                        // Ignorar si Shiro falla, ya validamos con jBCrypt
+                    }
 
                     String rolUser = userService.getRol(username);
                     int opcion = -1;
@@ -56,6 +59,7 @@ public class App {
                         System.out.println("3. Actualizar producto");
                         System.out.println("4. Eliminar producto");
                         System.out.println("5. Cerrar sesión");
+                        System.out.println("6. Listar usuarios");
                         System.out.println("0. Salir");
                         System.out.print("Selecciona una opción: ");
                         try {
@@ -143,6 +147,9 @@ public class App {
                                 currentUser.logout();
                                 opcion = 0;
                                 break;
+                            case 6:
+                                userService.listarUsuarios();
+                                break;
                             case 0:
                                 System.out.println("¡Hasta luego!");
                                 System.exit(0);
@@ -151,9 +158,8 @@ public class App {
                                 System.out.println("Opción inválida.");
                         }
                     }
-                } catch (AuthenticationException ae) {
+                } else {
                     System.out.println("Error: Usuario o contraseña incorrectos.");
-                    // Aquí puedes preguntar si quiere intentar de nuevo o regresar al menú principal
                 }
 
             } else if (opt.equals("2")) {
