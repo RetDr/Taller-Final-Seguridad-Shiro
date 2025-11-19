@@ -66,4 +66,12 @@ public class UsuarioService {
         Usuario u = buscar(username);
         return (u != null) ? u.getRol() : null;
     }
+
+    public void compararHashes(String password) {
+    String hashDebil = BCrypt.hashpw(password, BCrypt.gensalt(4)); // Cost bajo: débil
+    String hashFuerte = BCrypt.hashpw(password, BCrypt.gensalt(12)); // Cost alto: fuerte
+    System.out.println("Hash débil (cost=4): " + hashDebil);
+    System.out.println("Hash fuerte (cost=12): " + hashFuerte);
+}
+
 }

@@ -1,15 +1,13 @@
 package uptc.edu.co;
 
 import java.util.Scanner;
-
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.config.IniSecurityManagerFactory;
+import org.apache.shiro.realm.text.IniRealm;
+import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.subject.Subject;
-import org.apache.shiro.util.Factory;
-
 import uptc.edu.co.model.Producto;
 import uptc.edu.co.service.ProductoService;
 import uptc.edu.co.service.UsuarioService;
@@ -17,8 +15,8 @@ import uptc.edu.co.service.UsuarioService;
 public class App {
     public static void main(String[] args) {
         // Configuración de Apache Shiro
-        Factory<SecurityManager> factory = new IniSecurityManagerFactory("classpath:shiro.ini");
-        SecurityManager securityManager = factory.getInstance();
+        IniRealm iniRealm = new IniRealm("classpath:shiro.ini");
+        SecurityManager securityManager = new DefaultSecurityManager(iniRealm);
         SecurityUtils.setSecurityManager(securityManager);
 
         UsuarioService userService = new UsuarioService();
@@ -47,7 +45,13 @@ public class App {
                     currentUser.login(token); // Autenticación vía Shiro
                     System.out.println("Autenticación exitosa. Bienvenido " + currentUser.getPrincipal());
 
-                    String rolUser = userService.getRol(username);
+                    // Información de sesión
+                    System.out.println("----- Información de sesión -----");
+                    System.out.println("ID sesión: " + currentUser.getSession().getId());
+                    System.out.println("Usuario logueado: " + currentUser.getPrincipal());
+                    System.out.println("Inicio sesión: " + currentUser.getSession().getStartTimestamp());
+                    System.out.println("Timeout (ms): " + currentUser.getSession().getTimeout());
+
                     int opcion = -1;
                     while (opcion != 0) {
                         System.out.println("\n*** CRUD de Productos ***");
@@ -68,7 +72,7 @@ public class App {
 
                         switch (opcion) {
                             case 1:
-                                if ("admin".equals(rolUser) || "user".equals(rolUser)) {
+                                if (currentUser.isPermitted("producto:add")) {
                                     try {
                                         System.out.print("ID: ");
                                         int id = Integer.parseInt(sc.nextLine().trim());
@@ -80,14 +84,14 @@ public class App {
                                         productoService.agregarProducto(nuevo);
                                         System.out.println("Producto agregado.");
                                     } catch (NumberFormatException ex) {
-                                        System.out.println("Error: El ID y precio deben ser números.");
+                                        System.out.println("Error: El ID y el precio deben ser números.");
                                     }
                                 } else {
                                     System.out.println("No tienes permiso para agregar productos.");
                                 }
                                 break;
                             case 2:
-                                if ("admin".equals(rolUser) || "user".equals(rolUser)) {
+                                if (currentUser.isPermitted("producto:view")) {
                                     System.out.println("Lista de productos:");
                                     if (productoService.listarProductos().isEmpty()) {
                                         System.out.println("No hay productos registrados.");
@@ -101,7 +105,7 @@ public class App {
                                 }
                                 break;
                             case 3:
-                                if ("admin".equals(rolUser)) {
+                                if (currentUser.isPermitted("producto:update")) {
                                     try {
                                         System.out.print("ID de producto a actualizar: ");
                                         int idUpdate = Integer.parseInt(sc.nextLine().trim());
@@ -122,7 +126,7 @@ public class App {
                                 }
                                 break;
                             case 4:
-                                if ("admin".equals(rolUser)) {
+                                if (currentUser.isPermitted("producto:delete")) {
                                     try {
                                         System.out.print("ID del producto a eliminar: ");
                                         int idDelete = Integer.parseInt(sc.nextLine().trim());
@@ -153,24 +157,24 @@ public class App {
                     }
                 } catch (AuthenticationException ae) {
                     System.out.println("Error: Usuario o contraseña incorrectos.");
-                    // Aquí puedes preguntar si quiere intentar de nuevo o regresar al menú principal
                 }
-
             } else if (opt.equals("2")) {
                 // Registro de usuario
                 System.out.print("Nuevo usuario: ");
                 String username = sc.nextLine();
                 System.out.print("Contraseña: ");
                 String password = sc.nextLine();
-                System.out.print("Rol (admin/user): ");
+                System.out.print("Rol (user/guest): ");
                 String rol = sc.nextLine().trim().toLowerCase();
                 boolean exito = userService.registrarUsuario(username, password, rol);
                 if (exito) {
                     System.out.println("Usuario registrado con éxito (contraseña hasheada y guardada).");
+
+                    // Comparativo de hash débil vs fuerte
+                    userService.compararHashes(password);
                 } else {
                     System.out.println("Ya existe ese usuario.");
                 }
-
             } else if (opt.equals("0")) {
                 System.out.println("¡Hasta luego!");
                 break;
