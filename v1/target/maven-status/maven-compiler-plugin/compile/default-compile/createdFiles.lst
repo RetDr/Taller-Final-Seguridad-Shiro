@@ -1,0 +1,5 @@
+uptc\edu\co\model\Producto.class
+uptc\edu\co\service\ProductoService.class
+uptc\edu\co\service\UsuarioService.class
+uptc\edu\co\App.class
+uptc\edu\co\model\Usuario.class

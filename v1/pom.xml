@@ -14,6 +14,11 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.33</version>
+</dependency>
 
     <dependency>
         <groupId>org.apache.shiro</groupId>
@@ -38,6 +43,10 @@
     <artifactId>jbcrypt</artifactId>
     <version>0.4</version>
 </dependency>
+
+<!-- Removed com.github.jdstill:shiro-bcrypt:1.1 because it is not available from the configured repositories;
+     use org.mindrot:jbcrypt (above) for bcrypt support or replace with a shiro-bcrypt artifact that is published to a reachable repository. -->
+
 
 <dependency>
   <groupId>com.google.code.gson</groupId>
